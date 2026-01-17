@@ -117,23 +117,23 @@ class Program
                         background-color: #f8f9fa;
                         border-radius: 4px;
                     }
-                    .message .sender-1 {
-                        border-left: 3px solid #2563eb;
+                    .message.sender-0 {
+                        border-left: 3px solid #2563eb; /* Blue */
                     }
-                    .message .sender-2 {
-                        border-left: 3px solid #16a34a;
+                    .message.sender-1 {
+                        border-left: 3px solid #0891b2; /* Cyan */
                     }
-                    .message .sender-3 {
-                        border-left: 3px solid #9333ea;
+                    .message.sender-2 {
+                        border-left: 3px solid #16a34a; /* Green */
                     }
-                    .message .sender-4 {
-                        border-left: 3px solid #ea580c;
+                    .message.sender-3 {
+                        border-left: 3px solid #9333ea; /* Purple */
                     }
-                    .message .sender-5 {
-                        border-left: 3px solid #0891b2;
+                    .message.sender-4 {
+                        border-left: 3px solid #ea580c; /* Orange */
                     }
-                    .message .sender-6 {
-                        border-left: 3px solid #dc2626;
+                    .message.sender-5 {
+                        border-left: 3px solid #db2777 /* Magenta */
                     }
                     .message-header {
                         display: flex;

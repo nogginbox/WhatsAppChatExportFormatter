@@ -1,10 +1,14 @@
-﻿using System.Text;
+﻿using System.ComponentModel.DataAnnotations;
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 
 namespace WhatsAppExportChatMaker.ConsoleApp;
 
 class Program
 {
+    private const string WhatsAppDateTimeFormat = "dd/MM/yyyy, HH:mm:ss";
+
     static void Main(string[] args)
     {
         /*if (args.Length == 0)
@@ -14,13 +18,18 @@ class Program
             return;
         }*/
 
-        string inputFile = $"{AppContext.BaseDirectory}\\..\\..\\..\\Content\\Chat 1\\_chat.txt";  // args[0];
-        string outputFile = $"{AppContext.BaseDirectory}\\..\\..\\..\\Content\\Chat 1\\chat.html";  // args.Length > 1 ? args[1] : Path.ChangeExtension(inputFile, ".html");
+        string contentDirectory = $"{AppContext.BaseDirectory}\\..\\..\\..\\Content\\Chats\\";
+        string inputFile = $"{contentDirectory}Chat 2\\_chat.txt";  // args[0];
+        string outputFile = $"{contentDirectory}Chat 2\\chat.html";  // args.Length > 1 ? args[1] : Path.ChangeExtension(inputFile, ".html");
 
         if (!File.Exists(inputFile))
         {
             Console.WriteLine($"Error: File '{inputFile}' not found.");
-            return;
+            Environment.Exit(2);
+        }
+        else
+        {
+            Console.WriteLine($"Read file '{inputFile}'.");
         }
 
         try
@@ -46,7 +55,7 @@ class Program
         // Handles optional invisible characters (like left-to-right marks) at the start
         var messagePattern = new Regex(@"^[\u200E\u200F\s]*\[(.+?)\]\s+(.+?):\s*(.*)$");
 
-        ChatMessage currentMessage = null;
+        ChatMessage? currentMessage = null;
 
         foreach (var line in lines)
         {
@@ -63,7 +72,7 @@ class Program
                 // Start new message
                 currentMessage = new ChatMessage
                 {
-                    Timestamp = match.Groups[1].Value,
+                    Timestamp = ParseDateTime(match.Groups[1].Value),
                     Sender = match.Groups[2].Value,
                     Content = match.Groups[3].Value
                 };
@@ -163,6 +172,10 @@ class Program
                         color: #333;
                         margin-bottom: 20px;
                     }
+                    .toc-link {
+                        text-align: right;
+                        font-size: 0.6em;
+                    }
                 </style>
             </head>
             <body>
@@ -170,22 +183,59 @@ class Program
                     <h1>Chat Export</h1>
             """);
 
-        foreach (var message in messages)
-        {
-            string content = ProcessMessageContent(message.Content, outputDirectory);
-            var senderId = Array.IndexOf(senders, message.Sender);
 
-            html.AppendLine($"""
-                        <div class="message sender-{senderId}">
-                            <div class="message-header">
-                                <span class="sender">{EscapeHtml(message.Sender)}</span>
-                                <span class="timestamp">{EscapeHtml(message.Timestamp)}</span>
+        int? CurrentMonth = null;
+        List<MessageGroup> months = [];
+        var htmlMessages = new StringBuilder();
+
+        // Split messages into groups for each month
+        var messageGroups = messages.GroupBy(m => new DateTime(m.Timestamp?.Year ?? 0, m.Timestamp?.Month ?? 1, 1));
+
+        foreach (var messageGroup in messageGroups)
+        {
+            var monthId = $"{messageGroup.Key:yyyy-MM}";
+            var monthName = $"{messageGroup.Key:MMMM yyyy}";
+            months.Add(new (monthId, monthName, messageGroup.Count()));
+                
+            if (CurrentMonth != null)
+            {
+                htmlMessages.AppendLine("<p class=\"toc-link\"><a href=\"#toc\">Table of contents</a></p>");
+            }
+            htmlMessages.AppendLine($"<h2 id=\"h-{monthId}\">{monthName}</h2>");
+                
+            CurrentMonth = messageGroup.Key.Month;
+            
+            foreach(var message in messageGroup)
+            {
+                string content = ProcessMessageContent(message.Content, outputDirectory);
+                var senderId = Array.IndexOf(senders, message.Sender);
+
+                htmlMessages.AppendLine($"""
+                            <div id="m-{message.Timestamp:yyyy-MM-dd_HH-mm-ss}" class="message sender-{senderId}">
+                                <div class="message-header">
+                                    <span class="sender">{EscapeHtml(message.Sender)}</span>
+                                    <span class="timestamp">{message.Timestamp:ddd dd MMM yyyy - HH:mm:ss}</span>
+                                </div>
+                                <div class="content">{content}</div>
                             </div>
-                            <div class="content">{content}</div>
-                        </div>
-                """);
+                    """);
+            }
+
+            
         }
 
+        // HTML - Contents
+        html.AppendLine("<ul id=\"toc\">");
+        foreach(var month in months)
+        {
+            html.AppendLine($"<li><a href=\"#h-{month.Id}\">{month.Name}</a> ({month.Count})</li>");
+        }
+        html.AppendLine("</ul>");
+
+        // HTML - Add the messages
+        html.Append(htmlMessages);
+
+        // HTML - Footer
         html.AppendLine("""
                 </div>
             </body>
@@ -224,13 +274,33 @@ class Program
         });
     }
 
-    static string EscapeHtml(string text)
+    private static string EscapeHtml(string? text)
     {
-        return text
+        return text?
             .Replace("&", "&amp;")
             .Replace("<", "&lt;")
             .Replace(">", "&gt;")
             .Replace("\"", "&quot;")
-            .Replace("'", "&#39;");
+            .Replace("'", "&#39;")
+            ?? string.Empty;
+    }
+
+    private static DateTime? ParseDateTime(string stringDateTime)
+    {
+        if (DateTime.TryParseExact(
+            stringDateTime,
+            WhatsAppDateTimeFormat,
+            CultureInfo.InvariantCulture,
+            DateTimeStyles.None,
+            out DateTime parsedDate))
+        {
+            return parsedDate;
+        }
+        else
+        {
+            // Handle the failure case
+            Console.WriteLine($"Warning - Unable to parse the date/time {stringDateTime}.");
+            return null;
+        }
     }
 }

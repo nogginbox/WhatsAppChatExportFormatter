@@ -2,7 +2,7 @@
 
 class ChatMessage
 {
-    public string Timestamp { get; init; }
+    public DateTime? Timestamp { get; init; }
 
     public string? Sender { get; init; }
 

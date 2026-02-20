@@ -1,3 +1,7 @@
 <Solution>
+  <Folder Name="/01. Solution/">
+    <File Path=".gitignore" />
+    <File Path="README.md" />
+  </Folder>
   <Project Path="ConsoleApp1/WhatsAppExportChatMaker.ConsoleApp.csproj" />
 </Solution>

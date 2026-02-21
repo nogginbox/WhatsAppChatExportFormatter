@@ -1,4 +1,4 @@
-﻿namespace WhatsAppExportChatMaker.ConsoleApp;
+﻿namespace WhatsAppChatExportFormatter.ConsoleApp;
 
 class ChatMessage
 {

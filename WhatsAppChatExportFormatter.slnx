@@ -3,5 +3,5 @@
     <File Path=".gitignore" />
     <File Path="README.md" />
   </Folder>
-  <Project Path="ConsoleApp1/WhatsAppExportChatMaker.ConsoleApp.csproj" />
+  <Project Path="WhatsAppChatExportFormatter.ConsoleApp/WhatsAppChatExportFormatter.ConsoleApp.csproj" />
 </Solution>

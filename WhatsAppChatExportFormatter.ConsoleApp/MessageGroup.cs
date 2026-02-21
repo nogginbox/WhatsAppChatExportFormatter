@@ -1,4 +1,4 @@
-﻿namespace WhatsAppExportChatMaker.ConsoleApp;
+﻿namespace WhatsAppChatExportFormatter.ConsoleApp;
 
 /// <summary>
 /// Stats about a group of messages.
@@ -10,6 +10,4 @@ public class MessageGroup(string id, string name, int count)
     public int Count { get; init; } = count;
 
     public string Name { get; init; } = name;
-
-
 }

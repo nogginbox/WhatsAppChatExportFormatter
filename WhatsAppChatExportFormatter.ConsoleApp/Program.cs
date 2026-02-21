@@ -256,6 +256,7 @@ class Program
             .Replace("'", "&#39;");
 
         // Then process image attachments (after escaping, so the pattern matches escaped text)
+        // Image in message example: <attached: 00000033-PHOTO-2023-12-30-17-06-30.jpg>
         var attachmentPattern = new Regex(@"&lt;attached:\s*([^&]+)&gt;");
 
         return attachmentPattern.Replace(escapedContent, match => {
@@ -263,14 +264,12 @@ class Program
             string imagePath = Path.Combine(outputDirectory, filename);
 
             // Check if image exists
-            if (File.Exists(imagePath))
+            if (!File.Exists(imagePath))
             {
-                return $"<br><img src=\"{filename}\" alt=\"{filename}\">";
+                Console.WriteLine($"Image '{filename}' is not available. If you want this to apear, make sure you copy it from orginal chat export into the same folder as the output file.");
             }
-            else
-            {
-                return $"<br><em>[Image: {filename}]</em>";
-            }
+            
+            return $"<br><img src=\"{filename}\" alt=\"{filename}\">";
         });
     }
 

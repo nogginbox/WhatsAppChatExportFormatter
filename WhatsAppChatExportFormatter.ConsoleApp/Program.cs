@@ -1,11 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
-using System.Globalization;
+﻿using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 
 namespace WhatsAppChatExportFormatter.ConsoleApp;
 
-class Program
+partial class Program
 {
     private const string WhatsAppDateTimeFormat = "dd/MM/yyyy, HH:mm:ss";
 
@@ -53,7 +52,7 @@ class Program
 
         // Regex to match the message header: [date, time] Sender:
         // Handles optional invisible characters (like left-to-right marks) at the start
-        var messagePattern = new Regex(@"^[\u200E\u200F\s]*\[(.+?)\]\s+(.+?):\s*(.*)$");
+        var messagePattern = FindMessageHeaderRegex();
 
         ChatMessage? currentMessage = null;
 
@@ -159,6 +158,11 @@ class Program
                         color: #666;
                         font-size: 0.9em;
                     }
+                    .timestamp a {
+                        color: #666;
+                        text-decoration: none;
+                        cursor: default;
+                    }
                     .content {
                         color: #333;
                         white-space: pre-wrap;
@@ -177,6 +181,11 @@ class Program
                     .toc-link {
                         text-align: right;
                         font-size: 0.6em;
+                    }
+                    footer {
+                        font-size: 0.6em;
+                        margin: 4em 0 1em 0;
+                        text-align: center;
                     }
                 </style>
             </head>
@@ -213,10 +222,10 @@ class Program
                 var senderId = Array.IndexOf(senders, message.Sender);
 
                 htmlMessages.AppendLine($"""
-                            <div id="m-{message.Timestamp:yyyy-MM-dd_HH-mm-ss}" class="message sender-{senderId}">
+                            <div id="{message.LinkId}" class="message sender-{senderId}">
                                 <div class="message-header">
                                     <span class="sender">{EscapeHtml(message.Sender)}</span>
-                                    <span class="timestamp">{message.Timestamp:ddd dd MMM yyyy - HH:mm:ss}</span>
+                                    <span class="timestamp"><a href="#{message.LinkId}">{message.Timestamp:ddd dd MMM yyyy - HH:mm:ss}</a></span>
                                 </div>
                                 <div class="content">{content}</div>
                             </div>
@@ -240,6 +249,9 @@ class Program
         // HTML - Footer
         html.AppendLine("""
                 </div>
+                <footer>
+                    <p>Made using <a href="https://github.com/nogginbox/WhatsAppChatExportFormatter">WhatsApp Chat Export Formatter</a>.</p>
+                </footer>
             </body>
             </html>
             """);
@@ -259,7 +271,7 @@ class Program
 
         // Then process image attachments (after escaping, so the pattern matches escaped text)
         // Image in message example: <attached: 00000033-PHOTO-2023-12-30-17-06-30.jpg>
-        var attachmentPattern = new Regex(@"&lt;attached:\s*([^&]+)&gt;");
+        var attachmentPattern = FindImageMarkupRegex();
 
         return attachmentPattern.Replace(escapedContent, match => {
             string filename = match.Groups[1].Value.Trim();
@@ -304,4 +316,15 @@ class Program
             return null;
         }
     }
+
+    /// <summary>
+    /// Match the message header: [date, time] Sender.
+    /// (Handles optional invisible characters (like left-to-right marks) at the start)
+    /// </summary>
+    /// <returns></returns>
+    [GeneratedRegex(@"^[\u200E\u200F\s]*\[(.+?)\]\s+(.+?):\s*(.*)$")]
+    
+    private static partial Regex FindMessageHeaderRegex();
+    [GeneratedRegex(@"&lt;attached:\s*([^&]+)&gt;")]
+    private static partial Regex FindImageMarkupRegex();
 }

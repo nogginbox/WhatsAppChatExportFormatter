@@ -2,6 +2,8 @@
 
 class ChatMessage
 {
+    public string LinkId => $"m-{Timestamp:yyyy-MM-dd_HH-mm-ss}";
+
     public DateTime? Timestamp { get; init; }
 
     public string? Sender { get; init; }

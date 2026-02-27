@@ -95,7 +95,8 @@ partial class Program
     static void GenerateHtml(string?[] senders, List<ChatMessage> messages, string outputFile)
     {
         var html = new StringBuilder();
-        string outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputFile));
+        string? outputDirectory = Path.GetDirectoryName(Path.GetFullPath(outputFile))
+            ?? throw new ArgumentException($"Could not get path for output file {outputFile}");
 
         html.AppendLine("""
             <!DOCTYPE html>
@@ -269,22 +270,62 @@ partial class Program
             .Replace("\"", "&quot;")
             .Replace("'", "&#39;");
 
-        // Then process image attachments (after escaping, so the pattern matches escaped text)
+        // Then process media attachments (after escaping, so the pattern matches escaped text)
         // Image in message example: <attached: 00000033-PHOTO-2023-12-30-17-06-30.jpg>
         var attachmentPattern = FindImageMarkupRegex();
 
         return attachmentPattern.Replace(escapedContent, match => {
             string filename = match.Groups[1].Value.Trim();
+            string extension = filename.Split('.').Last();
             string imagePath = Path.Combine(outputDirectory, filename);
 
-            // Check if image exists
+            // Check if a media file exists
             if (!File.Exists(imagePath))
             {
-                Console.WriteLine($"Image '{filename}' is not available. If you want this to apear, make sure you copy it from orginal chat export into the same folder as the output file.");
+                Console.WriteLine($"Media file '{filename}' is not available. If you want this to apear, make sure you copy it from orginal chat export into the same folder as the output file.");
             }
             
-            return $"<br><img src=\"{filename}\" alt=\"{filename}\">";
+            return $"<br>{markupForFileType(extension, filename)}";
         });
+
+        static string markupForFileType(string extension, string file)
+        {
+            extension = extension.ToLower();
+            string? mimeType = extension switch
+            {
+                "mp4" => "video/mp4",
+                "webm" => "video/webm",
+                "ogg" => "video/ogg",
+                "ogv" => "video/ogg",
+                "mov" => "video/quicktime",
+                "avi" => "video/x-msvideo",
+                "3gp" => "video/3gpp",
+                "3g2" => "video/3gpp2",
+                _ => null
+            };
+
+            return extension switch
+            {
+                "gif" or
+                "jpg" or
+                "png" => $"""<img src="{file}" alt="{file}">""",
+                "mp4" or
+                "webm" or
+                "ogg" or
+                "ogv" or
+                "mov" or
+                "avi" or
+                "3gp" or
+                "3g2" => $"""
+                    <video width="640" height="480" controls>
+                      <source src="{file}" type="{mimeType}">
+                      Your browser does not support the video tag.
+                    </video>
+                    """,
+                _ => $"""<em>{file}</em>"""
+            };
+        }
+
     }
 
     private static string EscapeHtml(string? text)
